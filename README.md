@@ -3,7 +3,7 @@ The autonomous and teleop code for FTC 23-24.
 
 Software Subteam Split ->
 
-Autonomous + CV : **Pragya** & (Gautam & Hiyab & Tanish)
+Autonomous + CV : **Pragya** & (Gautam & Hiyab & Tanish) <br>
 TeleOp: **Gautam** & Hiyab & Tanish
 
 
