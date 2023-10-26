@@ -19,7 +19,7 @@ public class DoubleDOFArmTest extends LinearOpMode {
     //just so the arm doesn't mistake 0 for an actual value
     final double INFINITY = 9999999999.0;
     //since I don't trust the computer on several trig calculations
-    final double TOLERANCE = Math.pow(10,-5);
+    final double TOLERANCE = Math.pow(10,-4);
 
     //TODO 2.0: add potentiometers?
 
@@ -70,7 +70,7 @@ public class DoubleDOFArmTest extends LinearOpMode {
             .setCameraResolution(new Size(640, 480)) // works well w/o impacting performance
             .build();
 
-    // -- not exactly code stuff
+    // -- not exactly code stuff --
     //variables to compute
     double x,h;
     double alpha,beta, alphaTicks, betaTicks;
@@ -91,9 +91,11 @@ public class DoubleDOFArmTest extends LinearOpMode {
 
         waitForStart();
         while (opModeIsActive()) {
+            /*
             if (gamepad2.left_bumper) {
                 alignChassis();
             }
+            */
             moveArm();
 
             //telemetry
@@ -109,7 +111,7 @@ public class DoubleDOFArmTest extends LinearOpMode {
 
     //call moveArm() and alignChassis() in main loop
     public void moveArm() {
-        if (gamepad2.atRest()) {
+        if (!gamepad2.a && !gamepad2.y && !gamepad2.x && !gamepad2.y) {
             alpha = STORAGE_ALPHA;
             beta = STORAGE_BETA;
         } else {
@@ -119,6 +121,17 @@ public class DoubleDOFArmTest extends LinearOpMode {
             alpha = calcAB(R1, R2, x, h).first;
             beta = calcAB(R1, R2, x, h).second;
         }
+
+        //modify x to accout for the 60 degree slant on the backdrop
+        x += h / (Math.tan(Math.toRadians(60)));
+
+        //specific to 7610: due to joint1 being on the first level, adjust beta since it's also affected by alpha
+        beta -= alpha;
+
+        //modify alpha and beta so storage = 0
+        alpha -= STORAGE_ALPHA;
+        beta -= STORAGE_BETA;
+
         //convert alpha and beta to ticks
         alphaTicks = TICKS_PER_MOTOR_ROTATION_1 * alpha / (2 * Math.PI);
         betaTicks = TICKS_PER_MOTOR_ROTATION_2 * beta / (2 * Math.PI);
@@ -128,6 +141,8 @@ public class DoubleDOFArmTest extends LinearOpMode {
         joint2.setPower(0.01 * (betaTicks - joint2.getCurrentPosition())); //TODO tune
     }
 
+    /*
+    //SCUFFED VERSION USE GYRO NEXT TIME
     public void alignChassis() {
         double toTurn = 0;
         if(tagProcessor.getDetections().size() > 0){
@@ -135,13 +150,14 @@ public class DoubleDOFArmTest extends LinearOpMode {
             toTurn = tag.ftcPose.bearing;
             // side notes: bearing: left/right rotation to center
         }
-        double power = toTurn * 0.01; //TODO tune
+        double power = toTurn * 0.01;
         // CW if power +, check
         topLeft.setPower(power);
         topRight.setPower(-power);
         bottomLeft.setPower(power);
         bottomRight.setPower(-power);
     }
+    */
 
     //a ton of "helper" methods that do the actual heavy lifting
     public double setH() {
@@ -168,7 +184,6 @@ public class DoubleDOFArmTest extends LinearOpMode {
     }
 
     public boolean checkAB(double alpha, double beta) {
-        //TODO add tolerance
         return Math.abs(Math.cos(alpha-beta) - (h*h + x*x - R1 * R1 - R2 * R2)/(2* R1 * R2)) <= TOLERANCE;
     }
 
