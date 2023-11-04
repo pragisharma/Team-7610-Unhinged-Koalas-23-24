@@ -21,20 +21,14 @@ public class TeleOp1 extends LinearOpMode {
     private DcMotor backRight = null;
     private DcMotor backLeft = null;
 
-    //private DcMotor slide = null;
-
-    //private Servo gripper = null;
-
     /**
      * New instance of a DriveStateMachine that controls the motor power and drive state
      */
     DriveStateMachine driveSM = new DriveStateMachine();
-    //ArmStateMachine armSM = new ArmStateMachine();
-    //GripperStateMachine gripperSM = new GripperStateMachine();
 
     // assign local instance variables properties of the state machine
     private int driveState = driveSM.NONE;
-   // private int armState;
+    // private int armState;
     private double pow;
     //private double gripperState;
 
@@ -54,8 +48,8 @@ public class TeleOp1 extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         /* motor initialization */
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontRight = hardwareMap.get(DcMotor.class, "topRight");
+        frontLeft = hardwareMap.get(DcMotor.class, "topLeft");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
         //slide = hardwareMap.get(DcMotor.class, "slide");
@@ -160,37 +154,6 @@ public class TeleOp1 extends LinearOpMode {
             driveStateStr = "none";
         }
         telemetry.addData("drive state: ", driveStateStr);
-
-
-        // arm state telemetry
-        /*String armStateStr;
-        if (armState == armSM.GROUND) {
-            armStateStr = "ground";
-        } else if (armState == armSM.LEVEL_1) {
-            armStateStr = "level 1";
-        } else if (armState == armSM.LEVEL_2) {
-            armStateStr = "level 2";
-        } else {
-            armStateStr = "none";
-        }
-        telemetry.addData("arm state", armStateStr);
-        telemetry.addData("desired count", armState);
-        telemetry.addData("curr count", armSM.getCurrCount());
-        */
-
-        // gripper state telemetry
-        /*String gripperStateStr;
-        if (gripperState == gripperSM.CLOSED) {
-            gripperStateStr = "closed";
-        } else if (gripperState == gripperSM.OPEN) {
-            gripperStateStr = "open";
-        } else {
-            gripperStateStr = "none";
-        }
-        telemetry.addData("gripper state", gripperStateStr);
-        telemetry.addData("curr count", gripperSM.getPosition());
-        */
-
     }
 
 
@@ -201,13 +164,13 @@ public class TeleOp1 extends LinearOpMode {
     class DriveStateMachine {
         private int driveState = 0;
         private double pow = 0.0;
-        private double MAX_POWER = 0.6;
+        private double MAX_POWER = 0.7;
         private static final int STRAFE = 0;
         private static final int DRIVE = 1;
         private static final int TURN_RIGHT = 2;
         private static final int TURN_LEFT = 3;
         private static final int NONE = 4;
-        private final double JOYSTICK_SENSITIVITY = 0.3;
+        private final double JOYSTICK_SENSITIVITY = 0.1;
 
         private double drive;
         private double strafe;
@@ -282,22 +245,22 @@ public class TeleOp1 extends LinearOpMode {
         public double getPower() {
             if (driveState == DRIVE) {
                 if (drive < 0) {
-                    return -Range.clip((Math.abs(drive)/3.0), -0.6, 0.6);
+                    return -Range.clip((Math.abs(drive)), -0.7, 0.7);
                     //return drive;
                 }
-                return Range.clip((Math.abs(drive)/3.0), -0.6, 0.6);
+                return Range.clip((Math.abs(drive)), -0.7, 0.7);
                 //return Range.clip(drive, -MAX_POWER, MAX_POWER);
             } else if (driveState == STRAFE) {
                 if (strafe < 0) {
-                    return -Range.clip((Math.abs(strafe)/3.0), -0.6, 0.6);
+                    return -Range.clip((Math.abs(strafe)), -0.7, 0.7);
                 }
-                return Range.clip((Math.abs(strafe)/3.0), -0.6, 0.6);
+                return Range.clip((Math.abs(strafe)), -0.7, 0.7);
                 //return Range.clip(strafe, -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_RIGHT) {
-                return Range.clip((turnRight)/3.0, -0.6, 0.6);
+                return Range.clip((turnRight), -0.7, 0.7);
                 //return Range.clip(turnRight, -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_LEFT) {
-                return Range.clip((turnLeft)/3.0, -0.6, 0.6);
+                return Range.clip((turnLeft), -0.7, 0.7);
                 //return Range.clip(turnLeft, -MAX_POWER, MAX_POWER);
             } else {
                 return 0;
@@ -360,158 +323,7 @@ public class TeleOp1 extends LinearOpMode {
             return pow;
         }
     }
-
-
-    /**
-     * This class describes an ArmStateMachine
-     */
-    /*class ArmStateMachine {
-        private boolean pressed = true;
-        private int desired = 0;
-        private int MARGIN = 10;
-        private final int BASE = 0;
-        //private final int MAX = 1900;
-        private final int GROUND = 171; // getTicks(3.75) // TODO modify values
-        private final int BEACON = 250;
-        private final int LEVEL_1 = 1050; // getTicks(14) // 400
-        private final int LEVEL_2 = 1850; // getTicks(24) // 620
-        private final int LEVEL_3 = 2620; // getTicks(35);
-
-
-        public void setEncoderCount() {
-            pressed = true;
-            if (gamepad2.a) {
-                desired = GROUND;
-            } else if (gamepad2.b) {
-                desired = LEVEL_1;
-            } else if (gamepad2.y) {
-                desired = LEVEL_2;
-            } else if (gamepad2.x) {
-                desired = LEVEL_3;
-            } else if (gamepad2.dpad_down){
-                telemetry.addLine("reached");
-                telemetry.addData("power", slide.getPower());
-                telemetry.update();
-                desired = BASE;
-            } else if (gamepad2.dpad_up) {
-                desired = BEACON;
-            } else {
-                pressed = false;
-            }
-            slide.setTargetPosition(desired);
-        }
-
-
-        public void run() {
-            // resetting local variables according to current desired attributes
-            double currPosition = slide.getCurrentPosition();
-            double target = slide.getTargetPosition();
-            if (pressed) {
-                slide.setPower(1);
-                slide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            } else {
-                setEncoderCount();
-            }
-
-            // resetting pressed based on if the motor has reached its target position
-            // (desired encoder count)
-            // margin is the range of error that the encoder can reach (encoder count will
-            // usually never be exactly the desired position)
-            if (currPosition - MARGIN < target && currPosition + MARGIN > target) {
-                pressed = false;
-                slide.setPower(0);
-            }
-        }
-
-        /**
-         * This method calculates the number of ticks needed for the slide to move to
-         * inches height
-         * @param inches the height of the bottom of the cone when it is
-         * @return number of ticks needed to reach height inches
-         */
-        /*public int getTicks(double inches) {
-            return (int)((inches * 70.5) - 130);
-        }
-
-        /**
-         * This method gets the slide state in integer form representing encoder count
-         * @return desired encoder count
-         */
-        /*public int getSlideState() {
-            return desired;
-        }
-
-        /**
-         * This method returns the current encoder count of the slide Core Hex Motor
-         * @return current encoder count of the linear slide
-         */
-        /*public int getCurrCount() {
-            return slide.getCurrentPosition();
-        }
-    }*/
-
-    /*class GripperStateMachine {
-        // 270 / 360 = TICKS PER DEGREE
-        // TICKS PER DEGREE * DEGREES (60?) = TOTAL TICKS for open state
-        // 60:360 = x:270
-        // x = 45
-        // 270: 1 = 45: y
-        // y = 45 / 270
-        public double CLOSED = 0;
-        public double OPEN = 45.0/270;
-        public double NONE = -100;
-        public double MARGIN = 6.0/270; // 8 degrees margin - test
-        public double state = CLOSED;
-
-
-        public void setState() {
-            if (gamepad2.right_bumper) {
-                state = CLOSED;
-            } else if (gamepad2.left_bumper) {
-                state = OPEN;
-            } else {
-                state = NONE;
-            }
-        }
-
-        /**
-         * This method sets the position of the servo based on the current state
-         */
-        /*public void run() {
-            if (state == OPEN) {
-                gripper.setPosition(0.65);
-            } else if (state == CLOSED) {
-                gripper.setPosition(0);
-            }
-
-            // resets the state if the gripper has reached its maximum open or close encoder value
-            double currPos = gripper.getPosition();
-            if (state == OPEN && currPos + MARGIN >= 1) {
-                state = NONE;
-            } else if (state == CLOSED && currPos - MARGIN <= 0) {
-                state = NONE;
-            }
-        }
-
-        /**
-         * This method gets the state of the gripper
-         * @return double encoder value of the gripper
-         */
-        /*public double getState() {
-            return state;
-        }
-
-        /**
-         * This method gets the current encoder count of the gripper
-         * @return encoder count
-         */
-        /*public double getPosition() {
-            return gripper.getPosition();
-        }
-
-    }*/
 }
-
 
 
 
