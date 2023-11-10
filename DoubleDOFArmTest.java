@@ -31,27 +31,30 @@ public class DoubleDOFArmTest extends LinearOpMode {
     final double ARM_HEIGHT = 12;
 
     //remember to account for sprockets, pulleys, and gears!
-    final double TICKS_PER_MOTOR_ROTATION_1 = 1120;
-    final double TICKS_PER_MOTOR_ROTATION_2 = 1120;
+    //level 1: 384.5 TPR on motor (includes 13.7:1???), 28:1 external gearbox, 20:24 sprockets
+    final double TICKS_PER_MOTOR_ROTATION_1 = 8971.666666666;
+    //level 2: 288 TPR on motor, 40:10 sprockets D:
+    final double TICKS_PER_MOTOR_ROTATION_2 = 1152;
 
     //when you're not doing anything, please don't break the arm
     final double STORAGE_ALPHA = -Math.acos(12/ R1);
     final double STORAGE_BETA = Math.PI/2 - Math.asin(12/ R1);
 
+    //TODO special case for intake
+
+
     // -- field specs --
     //backdrop (and field) heights relative to tiles
-    final double FIELD_FLOOR = 0.0;
     final double FIRST_LINE = 12.375;
     final double SECOND_LINE = 19.0;
     final double THIRD_LINE = 25.75;
 
     //same as above, relative to first pivot point
-    final double GROUND_POSITION = FIELD_FLOOR - ARM_HEIGHT;
     final double FIRST_POSITION = FIRST_LINE - ARM_HEIGHT;
     final double SECOND_POSITION = SECOND_LINE - ARM_HEIGHT;
     final double THIRD_POSITION = THIRD_LINE - ARM_HEIGHT;
 
-    // -- electronics setup: motors and webcams --
+    // -- electronics setup: motors and webcam --
     //motors
     DcMotor topLeft, topRight, bottomLeft, bottomRight;
     DcMotor joint1, joint2;
@@ -91,11 +94,6 @@ public class DoubleDOFArmTest extends LinearOpMode {
 
         waitForStart();
         while (opModeIsActive()) {
-            /*
-            if (gamepad2.left_bumper) {
-                alignChassis();
-            }
-            */
             moveArm();
 
             //telemetry
@@ -114,6 +112,8 @@ public class DoubleDOFArmTest extends LinearOpMode {
         if (!gamepad2.a && !gamepad2.y && !gamepad2.x && !gamepad2.y) {
             alpha = STORAGE_ALPHA;
             beta = STORAGE_BETA;
+        } else if (gamepad2.a) {
+            ////TODO this should go backwards (intake), make this a special case
         } else {
             h = setH();
             x = setX();
@@ -125,7 +125,7 @@ public class DoubleDOFArmTest extends LinearOpMode {
         //modify x to accout for the 60 degree slant on the backdrop
         x += h / (Math.tan(Math.toRadians(60)));
 
-        //specific to 7610: due to joint1 being on the first level, adjust beta since it's also affected by alpha
+        //due to joint1 being on the first level, adjust beta since it's also affected by alpha
         beta -= alpha;
 
         //modify alpha and beta so storage = 0
@@ -141,29 +141,9 @@ public class DoubleDOFArmTest extends LinearOpMode {
         joint2.setPower(0.01 * (betaTicks - joint2.getCurrentPosition())); //TODO tune
     }
 
-    /*
-    //SCUFFED VERSION USE GYRO NEXT TIME
-    public void alignChassis() {
-        double toTurn = 0;
-        if(tagProcessor.getDetections().size() > 0){
-            AprilTagDetection tag = tagProcessor.getDetections().get(0);
-            toTurn = tag.ftcPose.bearing;
-            // side notes: bearing: left/right rotation to center
-        }
-        double power = toTurn * 0.01;
-        // CW if power +, check
-        topLeft.setPower(power);
-        topRight.setPower(-power);
-        bottomLeft.setPower(power);
-        bottomRight.setPower(-power);
-    }
-    */
-
     //a ton of "helper" methods that do the actual heavy lifting
     public double setH() {
-        if (gamepad2.a) {
-            return GROUND_POSITION;
-        } else if (gamepad2.b) {
+        if (gamepad2.b) {
             return FIRST_POSITION;
         } else if (gamepad2.x) {
             return SECOND_POSITION;
@@ -177,8 +157,8 @@ public class DoubleDOFArmTest extends LinearOpMode {
     public double setX() {
         if(tagProcessor.getDetections().size() > 0){
             AprilTagDetection tag = tagProcessor.getDetections().get(0);
-            return tag.ftcPose.x;
-            // side notes: bearing: left/right rotation to center, elevation: up/down rotation to center
+            //y = straight out from cam center
+            return tag.ftcPose.y; //shut up android studio
         }
         return INFINITY;
     }
@@ -204,11 +184,11 @@ public class DoubleDOFArmTest extends LinearOpMode {
         if (checkAB(alphaPos, betaPos)) {
             return new Pair<>(alphaPos, betaPos);
         }
-        else if (checkAB(alphaPos, betaNeg)) {
-            return new Pair<>(alphaPos, betaNeg);
-        }
         else if (checkAB(alphaNeg, betaPos)) {
             return new Pair<>(alphaNeg, betaPos);
+        }
+        else if (checkAB(alphaPos, betaNeg)) {
+            return new Pair<>(alphaPos, betaNeg);
         }
         else if (checkAB(alphaNeg, betaNeg)) {
             return new Pair<>(alphaNeg, betaNeg);
