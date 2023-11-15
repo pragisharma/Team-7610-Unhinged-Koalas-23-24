@@ -14,7 +14,7 @@ public class ArmButtons extends LinearOpMode {
     AnalogInput pot;
     Servo claw;
 
-    enum ArmStates {STORAGE, L1_DEPLOY, L2_DEPLOY, PICKUP, L2_RETRACT, L1_RETRACT}
+    enum ArmStates {STORAGE, L1_DEPLOY, L2_DEPLOY, PICKUP, L2_RETRACT, L1_RETRACT, SECOND_LINE}
     ArmStates armState = STORAGE;
 
     double targetAlpha;
@@ -87,89 +87,165 @@ public class ArmButtons extends LinearOpMode {
         int joint2Ticks = joint2.getCurrentPosition();
 
         //STATE MACHINE TIME WHOOOOO
+
+        //TODO make transitions to line 2 (press x)
         if (armState == STORAGE) {
-            targetAlpha = STORAGE_ALPHA_ANGLE;
-            targetBeta = STORAGE_BETA_TICKS;
             joint1.setPower(0);
             joint2.setPower(0);
 
             if (!bClose(joint2Ticks, targetBeta)) {
                 armState = L2_RETRACT;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (!aClose(joint1Angle, targetAlpha)) {
                 armState = L1_RETRACT;
+                targetAlpha = STORAGE_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (gamepad2.a) {
                 armState = L1_DEPLOY;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
+            } else if (gamepad2.x) {
+                armState = L1_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else { //L1 close, L2 close, no buttons
                 armState = STORAGE;
             }
         } else if (armState == L1_DEPLOY) {
-            targetAlpha = PICKUP_ALPHA_ANGLE;
-            targetBeta = STORAGE_BETA_TICKS;
             joint1.setPower(1 * (targetAlpha - joint1Angle));
             joint2.setPower(0);
 
-            if (!gamepad2.a) {
+            if (!gamepad2.a && !gamepad2.x) {
                 armState = L1_RETRACT;
+                targetAlpha = STORAGE_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (aClose(joint1Angle, targetAlpha)) {
-                armState = L2_DEPLOY;
+                if (gamepad2.a) {
+                    armState = L2_DEPLOY;
+                    targetAlpha = PICKUP_ALPHA_ANGLE;
+                    targetBeta = PICKUP_BETA_TICKS;
+                } else if (gamepad2.x) {
+                    armState = L2_DEPLOY;
+                    targetAlpha = SECOND_ALPHA_ANGLE;
+                    targetBeta = SECOND_BETA_TICKS;
+                }
+            } else if (gamepad2.x) {
+                armState = L1_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else { //L2 close, L1 not close, L2 not close, a
                 armState = L1_DEPLOY;
             }
         } else if (armState == L2_DEPLOY) {
-            targetAlpha = PICKUP_ALPHA_ANGLE;
-            targetBeta = PICKUP_BETA_TICKS;
             joint1.setPower(0);
             joint2.setPower(1 * (targetBeta - joint2Ticks)); //might need negative coefficient
 
-            if (!gamepad2.a) {
+            if (!gamepad2.a && !gamepad2.x) {
                 armState = L2_RETRACT;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (!aClose(joint1Angle, targetAlpha)) {
-                armState = L1_DEPLOY;
+                if (gamepad2.a) {
+                    armState = L1_DEPLOY;
+                    targetAlpha = PICKUP_ALPHA_ANGLE;
+                    targetBeta = STORAGE_BETA_TICKS;
+                } else if (gamepad2.x) {
+                    armState = L1_DEPLOY;
+                    targetAlpha = SECOND_ALPHA_ANGLE;
+                    targetBeta = STORAGE_BETA_TICKS;
+                }
             } else if (bClose(joint2Ticks, targetBeta)) {
-                armState = PICKUP;
+                if (gamepad2.a) {
+                    armState = PICKUP;
+                    targetAlpha = PICKUP_ALPHA_ANGLE;
+                    targetBeta = PICKUP_BETA_TICKS;
+                } else if (gamepad2.x) {
+                    armState = SECOND_LINE;
+                    targetAlpha = SECOND_ALPHA_ANGLE;
+                    targetBeta = SECOND_BETA_TICKS;
+                }
             } else { //L2 not close, L1 close, a
                 armState = L2_DEPLOY;
             }
         } else if (armState == PICKUP) {
-            targetAlpha = PICKUP_ALPHA_ANGLE;
-            targetBeta = PICKUP_BETA_TICKS;
             joint1.setPower(0);
             joint2.setPower(0);
 
             if (!aClose(joint1Angle, targetAlpha)) {
                 armState = L1_DEPLOY;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (!bClose(joint2Ticks, targetBeta)) {
                 armState = L2_DEPLOY;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = PICKUP_BETA_TICKS;
             } else if (!gamepad2.a) {
                 armState = L2_RETRACT;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else { //L1 close, L2 close, a
                 armState = PICKUP;
             }
+        } else if (armState == SECOND_LINE) {
+            joint1.setPower(0);
+            joint2.setPower(0);
+
+            if (!aClose(joint1Angle, targetAlpha)) {
+                armState = L1_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
+            } else if (!bClose(joint2Ticks, targetBeta)) {
+                armState = L2_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = SECOND_BETA_TICKS;
+                //TODO everything down here needs to be fixed D:
+            } else if (!gamepad2.x) { //if a: gets sent to L2_RETRACT, then redirected to PICKUP (hopefully)
+                armState = L2_RETRACT;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
+            } else { //L1 close, L2 close, a
+                armState = SECOND_LINE;
+            }
         } else if (armState == L2_RETRACT) {
-            targetAlpha = PICKUP_ALPHA_ANGLE;
-            targetBeta = STORAGE_BETA_TICKS;
             joint1.setPower(0);
             joint2.setPower(1 * (targetBeta - joint2Ticks));
 
             if (gamepad2.a) {
                 armState = L2_DEPLOY;
-            } else if (bClose(joint2Ticks, targetBeta)) {
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = PICKUP_BETA_TICKS;
+            } else if (gamepad2.x) {
+                armState = L2_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = SECOND_BETA_TICKS;
+            } else if (bClose(joint2Ticks, targetBeta)) { //no press
                 armState = L1_RETRACT;
-            } else { //L1 close, L1 not close, L2 not close, no buttons
+                targetAlpha = STORAGE_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
+            } else { //L1 close, L1 not close, L2 not close
                 armState = L2_RETRACT;
             }
         } else if (armState == L1_RETRACT) {
-            targetAlpha = STORAGE_ALPHA_ANGLE;
-            targetBeta = STORAGE_BETA_TICKS;
             joint1.setPower(1 * (targetAlpha - joint1Angle));
             joint2.setPower(0);
 
             if (gamepad2.a) {
                 armState = L1_DEPLOY;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
+            } else if (gamepad2.x) {
+                armState = L2_DEPLOY;
+                targetAlpha = SECOND_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (!bClose(joint2Ticks, targetBeta)) {
                 armState = L2_RETRACT;
+                targetAlpha = PICKUP_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else if (aClose(joint1Angle, targetAlpha)) {
                 armState = STORAGE;
+                targetAlpha = STORAGE_ALPHA_ANGLE;
+                targetBeta = STORAGE_BETA_TICKS;
             } else { //L1 not close, L2 close, no buttons
                 armState = L1_RETRACT;
             }
