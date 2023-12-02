@@ -3,7 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
@@ -11,10 +13,8 @@ import com.qualcomm.robotcore.util.Range;
  * This class describes a TeleOp_6038 that contains a 20 millisecond loop controlling
  * the 20:1 Core Hex Motors used for the wheels and linear slide based on input from a gamepad
  */
-@TeleOp(group = "LinearOpMode", name = "TeleOp")
-//@Disabled
-public class TeleOp1 extends LinearOpMode {
-
+@TeleOp(name = "Bell Qualifier Teleop")
+public class BellTeleop extends LinearOpMode {
     /* motor declaration */
     private DcMotor frontRight = null;
     private DcMotor frontLeft = null;
@@ -39,6 +39,11 @@ public class TeleOp1 extends LinearOpMode {
     int NONE = driveSM.NONE;
 
 
+    //ARM STUFF HERE
+    DcMotor joint1, joint2;
+    AnalogInput pot;
+    Servo claw;
+
     /**
      * This method determines the actions of the robot, it must be implemented because
      * the class extends LinearOpMode
@@ -62,6 +67,23 @@ public class TeleOp1 extends LinearOpMode {
         driveSM.setInitialBehavior();
         //gripper.setPosition(0);
 
+        //MORE ARM STUFF
+        joint1 = hardwareMap.get(DcMotor.class, "joint 1");
+        pot = hardwareMap.get(AnalogInput.class, "joint 1 pot");
+
+        joint2 = hardwareMap.get(DcMotor.class, "joint 2");
+        claw = hardwareMap.get(Servo.class, "claw");
+
+        //reset encoders to 0
+        joint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        joint2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        joint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        joint2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //no moving
+        joint1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        joint2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         waitForStart();
         while (opModeIsActive()) {
 
@@ -82,6 +104,19 @@ public class TeleOp1 extends LinearOpMode {
 
             // update telemetry every iteration of the loop
             // 20 millisecond sleep to avoid control and expansion hub overload
+
+            arm();
+            claw();
+
+            telemetry.addData("pot voltage", pot.getVoltage());
+            telemetry.addData("pot angle", pot.getVoltage()/3.3 * 270);
+            telemetry.addData("joint 2 ticks", joint2.getCurrentPosition());
+            telemetry.addLine();
+            telemetry.addData("joint 1 power", joint1.getPower());
+            telemetry.addData("joint 2 power", joint2.getPower());
+            telemetry.addLine();
+            telemetry.addData("claw position, 1 = open", claw.getPosition());
+
             writeTelemetry();
             telemetry.update();
             sleep(20);
@@ -93,6 +128,28 @@ public class TeleOp1 extends LinearOpMode {
         //gripper.setPosition(0);
 
     }
+
+    public void arm() {
+        joint1.setPower(gamepad2.left_stick_y);
+        joint2.setPower(-gamepad2.right_stick_y);
+
+        //open when pressed
+        if (gamepad2.right_bumper) {
+            claw.setPosition(1);
+        } else {
+            claw.setPosition(0);
+        }
+    }
+
+    public void claw() {
+        //open when pressed
+        if (gamepad2.right_bumper) {
+            claw.setPosition(1);
+        } else {
+            claw.setPosition(0);
+        }
+    }
+
     /**
      * This method sends the power to the motors based on updated instance variables and
      * the variable power which is updated in the main method runOpMode()
@@ -164,7 +221,7 @@ public class TeleOp1 extends LinearOpMode {
     class DriveStateMachine {
         private int driveState = 0;
         private double pow = 0.0;
-        private double MAX_POWER = 0.7;
+        private double MAX_POWER = 1.0;
         private static final int STRAFE = 0;
         private static final int DRIVE = 1;
         private static final int TURN_RIGHT = 2;
@@ -245,23 +302,23 @@ public class TeleOp1 extends LinearOpMode {
         public double getPower() {
             if (driveState == DRIVE) {
                 if (drive < 0) {
-                    return -Range.clip((Math.abs(drive)), -0.7, 0.7);
+                    return -Range.clip((Math.abs(drive)), -MAX_POWER, MAX_POWER);
                     //return drive;
                 }
-                return Range.clip((Math.abs(drive)), -0.7, 0.7);
-                //return Range.clip(drive, -MAX_POWER, MAX_POWER);
+                //return Range.clip((Math.abs(drive)), -0.7, 0.7);
+                return Range.clip(drive, -MAX_POWER, MAX_POWER);
             } else if (driveState == STRAFE) {
                 if (strafe < 0) {
-                    return -Range.clip((Math.abs(strafe)), -0.7, 0.7);
+                    return -Range.clip((Math.abs(strafe)), -MAX_POWER, MAX_POWER);
                 }
-                return Range.clip((Math.abs(strafe)), -0.7, 0.7);
-                //return Range.clip(strafe, -MAX_POWER, MAX_POWER);
+                //return Range.clip((Math.abs(strafe)), -0.7, 0.7);
+                return Range.clip(strafe, -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_RIGHT) {
-                return Range.clip((turnRight), -0.7, 0.7);
-                //return Range.clip(turnRight, -MAX_POWER, MAX_POWER);
+                //return Range.clip((turnRight), -0.7, 0.7);
+                return Range.clip(turnRight, -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_LEFT) {
-                return Range.clip((turnLeft), -0.7, 0.7);
-                //return Range.clip(turnLeft, -MAX_POWER, MAX_POWER);
+                //return Range.clip((turnLeft), -0.7, 0.7);
+                return Range.clip(turnLeft, -MAX_POWER, MAX_POWER);
             } else {
                 return 0;
             }

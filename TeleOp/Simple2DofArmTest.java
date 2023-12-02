@@ -22,11 +22,13 @@ public class Simple2DofArmTest extends LinearOpMode {
         //reset encoders to 0
         joint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         joint2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        joint1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        joint2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         waitForStart();
         while (opModeIsActive()) {
             joint1.setPower(gamepad2.left_stick_y);
-            joint2.setPower(0.5 * gamepad2.right_stick_y);
+            joint2.setPower(-gamepad2.right_stick_y);
 
             //open when pressed
             if (gamepad2.right_bumper) {

@@ -16,24 +16,25 @@ public class EasyArmButtons extends LinearOpMode {
     Servo claw;
 
     enum ArmStates {STORAGE, L1_DEPLOY_HIGH, L2_PICKUP, PICKUP, L1_RETRACT_HIGH, L2_STORAGE, //yeah this part's a mess
-        FIRST_LINE, SECOND_LINE, THIRD_LINE}
+        FIRST_LINE, SECOND_LINE, THIRD_LINE,
+        LINE_RETRACT}
     ArmStates armState = STORAGE;
 
     //TODO get positions
     double STORAGE_ALPHA_ANGLE; // set when OpMode is initialized
     final int STORAGE_BETA_TICKS = 0;
 
-    final double PICKUP_ALPHA_ANGLE = 40;
-    final double PICKUP_SECONDARY_ALPHA = 40; // the one you lift to for joint 2 to have clearance
+    final double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 22;
+    final double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 25; // the one you lift to for joint 2 to have clearance
     final int PICKUP_BETA_TICKS = 1700;
 
-    final double FIRST_ALPHA_ANGLE = 0;
+    final double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 0;
     final int FIRST_BETA_TICKS = 0;
 
-    final double SECOND_ALPHA_ANGLE = 0;
-    final int SECOND_BETA_TICKS = 0;
+    final double SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 78;
+    final int SECOND_BETA_TICKS = 700;
 
-    final double THIRD_ALPHA_ANGLE = 0;
+    final double THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 0;
     final int THIRD_BETA_TICKS = 0;
 
     @Override
@@ -105,15 +106,17 @@ public class EasyArmButtons extends LinearOpMode {
          */
 
         //the hard part
-        //TODO handle the rest of the error cases not on the flowchart
+        //TODO add transition state FROM SET LINES TO STORAGE
         if (armState == STORAGE) {
-            joint1.setPower(Range.clip(-0.5 * (STORAGE_ALPHA_ANGLE - alpha), -0.5, 0.5));
+            joint1.setPower(Range.clip(-0.1 * (STORAGE_ALPHA_ANGLE - alpha), -0.5, 0.5));
             joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
 
             if (gamepad2.a) {
                 armState = L1_DEPLOY_HIGH;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
+            } else if (!bClose(beta, STORAGE_BETA_TICKS)) {
+                armState = L2_STORAGE;
             } else {
                 armState = STORAGE;
             }
@@ -123,6 +126,8 @@ public class EasyArmButtons extends LinearOpMode {
 
             if (!gamepad2.a && !gamepad2.x) {
                 armState = STORAGE;
+            } else if (gamepad2.x) {
+                armState = SECOND_LINE;
             } else if (aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
                 armState = L2_PICKUP;
             } else {
@@ -134,6 +139,8 @@ public class EasyArmButtons extends LinearOpMode {
 
             if (!gamepad2.a && !gamepad2.x) {
                 armState = L2_STORAGE;
+            } else if (gamepad2.x) {
+                armState = SECOND_LINE;
             } else if (!aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
                 armState = L1_DEPLOY_HIGH;
             } else if (bClose(beta, PICKUP_BETA_TICKS)) {
@@ -146,6 +153,8 @@ public class EasyArmButtons extends LinearOpMode {
             joint2.setPower(Range.clip(0.5 * (PICKUP_BETA_TICKS - beta), -0.5, 0.5));
 
             if (gamepad2.a) {
+                armState = PICKUP;
+            } else if (!bClose(beta, PICKUP_BETA_TICKS)) {
                 armState = PICKUP;
             } else {
                 armState = L1_RETRACT_HIGH;
@@ -179,9 +188,9 @@ public class EasyArmButtons extends LinearOpMode {
             }
         }
 
-        // fortunately the rest of the states are easy, i'm just too lazy to get the rest of the lines in
+        // fortunately the rest of the states are easy, i'm just too lazy to get the rest of the set lines in
         else if (armState == SECOND_LINE) {
-            joint1.setPower(Range.clip(-0.5 * (SECOND_ALPHA_ANGLE - alpha), -0.5, 0.5));
+            joint1.setPower(Range.clip(-0.1 * (SECOND_ALPHA_ANGLE - alpha), -0.5, 0.5));
             joint2.setPower(Range.clip(0.5 * (SECOND_BETA_TICKS - beta), -0.5, 0.5));
 
             if (gamepad2.a) {
@@ -189,6 +198,18 @@ public class EasyArmButtons extends LinearOpMode {
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else {
+                armState = LINE_RETRACT;
+            }
+        }
+
+        //SIKE here's another case while i figure out why sending it to storage directly eventuall sends it to pickup
+        else if (armState == LINE_RETRACT) {
+            joint1.setPower(Range.clip(-0.1 * (STORAGE_ALPHA_ANGLE - alpha), -0.5, 0.5));
+            joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
+
+            if (gamepad2.x) {
+                armState = SECOND_LINE;
+            } else if (aClose(alpha, STORAGE_ALPHA_ANGLE) && bClose(beta, STORAGE_BETA_TICKS)) {
                 armState = STORAGE;
             }
         }
@@ -205,10 +226,10 @@ public class EasyArmButtons extends LinearOpMode {
 
     /*-- helpers --*/
     public boolean aClose(double actual, double target) {
-        return Math.abs(target - actual) <= 5; //5 DEGREES should be close enough
+        return Math.abs(target - actual) <= 1; //5 DEGREES should be close enough
     }
 
     public boolean bClose(double actual, double target) {
-        return Math.abs(target - actual) <= 20; //20 TICKS should be close enough
+        return Math.abs(target - actual) <= 10; //10 TICKS should be close enough
     }
 }
