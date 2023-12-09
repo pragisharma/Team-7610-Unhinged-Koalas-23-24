@@ -108,10 +108,10 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 
         while (opModeIsActive()) {
             //case 1 (middle spike - 2)
-           moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24)));
-           sleep(20);
-           moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
-           sleep(20);
+//           moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24)));
+//           sleep(20);
+//           moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
+//           sleep(20);
 
            // moveForward(power, (int)((trm.getCurrentPosition() + COUNTS_PER_INCH * 24)));
            // sleep(20);
@@ -120,21 +120,37 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 //            break;
 
             // case 2 (right spike - 1)
-            // turn(power, 90);
-            // turn(power, -90);
-            // moveBackward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 30));
-            // sleep(50);
+//
+//             moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22)));
+//             sleep(20);
+//             turn(power, -80);
+//             sleep(20);
+//             moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 30));
+//             sleep(20);
+
+            // case 3 (left spike - 3)
+            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22));
+            sleep(20);
+            turn(power, -80);
+            sleep(20);
+            moveRight(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
+            sleep(20);
+            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
+            sleep(20);
 
 
-            trm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            brm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            tlm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            blm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-            trm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            brm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            tlm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            blm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+//
+//            trm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            brm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            tlm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            blm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//
+//            trm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            brm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            tlm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            blm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
             break;
