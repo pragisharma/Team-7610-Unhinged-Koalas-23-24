@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.arm;
 
-import static org.firstinspires.ftc.teamcode.EasyArmButtons.ArmStates.*;
+import static org.firstinspires.ftc.teamcode.arm.EasyArmButtons.ArmStates.*;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -9,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name = "Easy Arm Button")
+//TODO get the speed up to 1
+@TeleOp(name = "Integrated Arm Buttons (please work)")
 public class EasyArmButtons extends LinearOpMode {
     DcMotor joint1, joint2;
     AnalogInput pot;
@@ -24,18 +25,23 @@ public class EasyArmButtons extends LinearOpMode {
     double STORAGE_ALPHA_ANGLE; // set when OpMode is initialized
     final int STORAGE_BETA_TICKS = 0;
 
-    final double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 22;
-    final double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 25; // the one you lift to for joint 2 to have clearance
+    final double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 36;
+    final double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 45; // the one you lift to for joint 2 to have clearance
     final int PICKUP_BETA_TICKS = 1700;
 
-    final double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 0;
-    final int FIRST_BETA_TICKS = 0;
+    final double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 73;
+    final int FIRST_BETA_TICKS = 431;
 
     final double SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 78;
     final int SECOND_BETA_TICKS = 700;
 
     final double THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 0;
     final int THIRD_BETA_TICKS = 0;
+
+    //arm control constants
+    final double aP = 0.01;
+    final double bP = 0.1;
+    final double maxArmPower = 0.5;
 
     @Override
     public void runOpMode() {
@@ -106,13 +112,17 @@ public class EasyArmButtons extends LinearOpMode {
          */
 
         //the hard part
-        //TODO add transition state FROM SET LINES TO STORAGE
+        double joint1Power;
         if (armState == STORAGE) {
-            joint1.setPower(Range.clip(-0.1 * (STORAGE_ALPHA_ANGLE - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, STORAGE_ALPHA_ANGLE);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (gamepad2.a) {
                 armState = L1_DEPLOY_HIGH;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else if (!bClose(beta, STORAGE_BETA_TICKS)) {
@@ -121,11 +131,15 @@ public class EasyArmButtons extends LinearOpMode {
                 armState = STORAGE;
             }
         } else if (armState == L1_DEPLOY_HIGH) {
-            joint1.setPower(Range.clip(-0.5 * (PICKUP_SECONDARY_ALPHA - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (!gamepad2.a && !gamepad2.x) {
                 armState = STORAGE;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else if (aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
@@ -134,11 +148,15 @@ public class EasyArmButtons extends LinearOpMode {
                 armState = L1_DEPLOY_HIGH;
             }
         } else if (armState == L2_PICKUP) {
-            joint1.setPower(Range.clip(-0.5 * (PICKUP_SECONDARY_ALPHA - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (PICKUP_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (!gamepad2.a && !gamepad2.x) {
                 armState = L2_STORAGE;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else if (!aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
@@ -149,8 +167,10 @@ public class EasyArmButtons extends LinearOpMode {
                 armState = L2_PICKUP;
             }
         } else if (armState == PICKUP) {
-            joint1.setPower(Range.clip(-0.5 * (PICKUP_ALPHA_ANGLE - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (PICKUP_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, PICKUP_ALPHA_ANGLE);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (gamepad2.a) {
                 armState = PICKUP;
@@ -160,8 +180,10 @@ public class EasyArmButtons extends LinearOpMode {
                 armState = L1_RETRACT_HIGH;
             }
         } else if (armState == L1_RETRACT_HIGH) {
-            joint1.setPower(Range.clip(-0.5 * (PICKUP_SECONDARY_ALPHA - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (PICKUP_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (gamepad2.a) {
                 armState = PICKUP;
@@ -171,12 +193,16 @@ public class EasyArmButtons extends LinearOpMode {
                 armState = L1_RETRACT_HIGH;
             }
         } else if (armState == L2_STORAGE) { //"exit state" to set lines
-            joint1.setPower(Range.clip(-0.5 * (PICKUP_SECONDARY_ALPHA - alpha), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA);
+
+            joint1.setPower(joint1Power);
             //any power set here is overridden when transitioning to set lines anyways
-            joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
+            joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (gamepad2.a) {
                 armState = L2_PICKUP;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else if (!aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
@@ -189,12 +215,31 @@ public class EasyArmButtons extends LinearOpMode {
         }
 
         // fortunately the rest of the states are easy, i'm just too lazy to get the rest of the set lines in
-        else if (armState == SECOND_LINE) {
-            joint1.setPower(Range.clip(-0.1 * (SECOND_ALPHA_ANGLE - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (SECOND_BETA_TICKS - beta), -0.5, 0.5));
+        else if (armState == FIRST_LINE) {
+            joint1Power = setJoint1Power(alpha, FIRST_ALPHA_ANGLE);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (FIRST_BETA_TICKS - beta), -maxArmPower, maxArmPower));
 
             if (gamepad2.a) {
                 armState = PICKUP;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
+            } else if (gamepad2.x) {
+                armState = SECOND_LINE;
+            } else {
+                armState = LINE_RETRACT;
+            }
+        } else if (armState == SECOND_LINE) {
+            joint1Power = setJoint1Power(alpha, SECOND_ALPHA_ANGLE);
+
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (SECOND_BETA_TICKS - beta), -maxArmPower, maxArmPower));
+
+            if (gamepad2.a) {
+                armState = PICKUP;
+            } else if (gamepad2.b) {
+                armState = FIRST_LINE;
             } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else {
@@ -204,10 +249,14 @@ public class EasyArmButtons extends LinearOpMode {
 
         //SIKE here's another case while i figure out why sending it to storage directly eventuall sends it to pickup
         else if (armState == LINE_RETRACT) {
-            joint1.setPower(Range.clip(-0.1 * (STORAGE_ALPHA_ANGLE - alpha), -0.5, 0.5));
-            joint2.setPower(Range.clip(0.5 * (STORAGE_BETA_TICKS - beta), -0.5, 0.5));
+            joint1Power = setJoint1Power(alpha, STORAGE_ALPHA_ANGLE);
 
-            if (gamepad2.x) {
+            joint1.setPower(joint1Power);
+            joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -maxArmPower, maxArmPower));
+
+            if (gamepad2.b) {
+                armState = FIRST_LINE;
+            } else if (gamepad2.x) {
                 armState = SECOND_LINE;
             } else if (aClose(alpha, STORAGE_ALPHA_ANGLE) && bClose(beta, STORAGE_BETA_TICKS)) {
                 armState = STORAGE;
@@ -225,11 +274,21 @@ public class EasyArmButtons extends LinearOpMode {
     }
 
     /*-- helpers --*/
+    public double setJoint1Power(double alpha, double target) {
+        if (aClose(alpha, target)) {
+            return 0;
+        } else if (target - alpha > 0) {
+            return -maxArmPower;
+        } else {
+            return maxArmPower;
+        }
+    }
+
     public boolean aClose(double actual, double target) {
-        return Math.abs(target - actual) <= 1; //5 DEGREES should be close enough
+        return Math.abs(target - actual) <= 1;
     }
 
     public boolean bClose(double actual, double target) {
-        return Math.abs(target - actual) <= 10; //10 TICKS should be close enough
+        return Math.abs(target - actual) <= 10;
     }
 }
