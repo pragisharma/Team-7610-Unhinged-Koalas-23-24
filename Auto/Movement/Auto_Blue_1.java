@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Auto.Movement;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -81,11 +81,19 @@ public class Auto_Blue_1 extends LinearOpMode {
             waitForStart();
 
         while (opModeIsActive()) {
+            // new and reformed
+
+            moveBackward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 22));
+            turn(power, -40.00);
+            moveBackward(power, (int) (-(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)));
+
+
+
             // REMINDERS: PASS IN NEGATIVE DISTANCE FOR MOVE RIGHT AND MOVE BACKWARD
             // issue with right: moves 27 inches NOT 12 (idk why), try conversion factor of 1/2.25 for dist
             //moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 12)));
 
-            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
+            // moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
 
             //case 1 (middle spike - 2)
 
@@ -95,15 +103,16 @@ public class Auto_Blue_1 extends LinearOpMode {
 
             //case 2 (right spike - 1)
 
-            turn(power, 40.00); // 30 goes too much 20 goes too less for a 90 degree turn
+            // turn(power, 40.00); // 90 degree turn
 
             // else if custom game element is present
                 // place pixel
-                moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 10)));
+                // moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)));
+                // moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 10)));
 
             //case 3 (left spike - 3)
 
-            // turn(power, 180.00);
+            // turn(power, 80.00); // 90 degree turn
             // else if custom game element is present
                 // place pixel
                 // moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
@@ -175,24 +184,22 @@ public class Auto_Blue_1 extends LinearOpMode {
                 blm.setPower(power);
                 sleep(200);
             }
+        }else if(deg < 0){
+            // while we want to rotate it ccw (- angle)
+            while(deg >= robotOrientation.getYaw(AngleUnit.DEGREES)) {
+                robotOrientation = imu.getRobotYawPitchRollAngles();
+                telemetry.addData("CURRENT DEGREES: ", robotOrientation.getYaw(AngleUnit.DEGREES));
+                telemetry.update();
+                trm.setPower(power);
+                brm.setPower(power);
+                tlm.setPower(-power);
+                blm.setPower(-power);
+                sleep(20);
+            }
         }
 
-//        else if(deg < 0){
-//            // while we want to rotate it ccw (- angle)
-//            while(deg >= robotOrientation.getYaw(AngleUnit.DEGREES)) {
-//                robotOrientation = imu.getRobotYawPitchRollAngles();
-//                telemetry.addData("CURRENT DEGREES: ", robotOrientation.getYaw(AngleUnit.DEGREES));
-//                telemetry.update();
-//                trm.setPower(power);
-//                brm.setPower(power);
-//                tlm.setPower(-power);
-//                blm.setPower(-power);
-//                sleep(20);
-//            }
-//        }
-//
-//
-//        resetMotors();
+
+        resetMotors();
         sleep(20);
 
     }

@@ -1,19 +1,19 @@
 package org.firstinspires.ftc.teamcode.Auto.Movement;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
@@ -21,8 +21,8 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import java.util.List;
 
 
-@Autonomous(name = "auto blue close") // closer to the backdrop
-public class Auto_Blue_Move_CV extends LinearOpMode {
+@Autonomous(name = "Auto Better Version ;-;") // closer to the backdrop blue alliance
+public class Auto_Better_Work extends LinearOpMode {
 
     // motors
     private DcMotor tlm, trm, blm, brm;
@@ -36,17 +36,15 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
     // gyro
     IMU imu;
     IMU.Parameters myIMUparameters;
-    private static final int OFFSET = 10;
 
     // cv
-
     private static final boolean USE_WEBCAM = true;
 
     //CHANGE ALL THIS STUFF TO BLUE CONE WHEN WE TRAIN IT >>>>
-    private static final String TFOD_MODEL_ASSET = "bluesphere.tflite";
-    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/bluesphere.tflite";
+    private static final String TFOD_MODEL_ASSET = "blue_cone.tflite";
+    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/blue_cone.tflite";
     private static final String[] LABELS = {
-            "blue sphere",
+            "blue cone",
     };
 
     private TfodProcessor tfod;
@@ -105,152 +103,49 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
 
-
         waitForStart();
 
         while (opModeIsActive()) {
-            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 12)));
-            sleep(20);
+            // REMINDERS: PASS IN NEGATIVE DISTANCE FOR MOVE RIGHT AND MOVE BACKWARD
+            // issue with right: moves 27 inches NOT 12 (idk why), try conversion factor of 1/2.25 for dist
+            //moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 12)));
 
-            boolean detected = checkTfod();
-            sleep(500);
-
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            if(detected){
-                //case 1 (middle spike - 2)
-                moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
-                sleep(20);
-                break;
-            }
-
-            turn(power, -90 + OFFSET); // 80 degrees cuz gyro is off
-            sleep(20);
-
-            detected = checkTfod();
-            sleep(500);
-
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            if(detected){
-                // case 2 (right spike - 1)
-                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
-                sleep(20);
-                break;
-            }
-
-            turn(power, -180 + OFFSET); //  170 degrees cuz gyro is off
-            sleep(20);
-
-            detected = checkTfod();
-            sleep(500);
-
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            if(detected) {
-                // case 3 (left spike - 3)
-                moveRight(power, (int) -(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
-                sleep(20);
-                moveForward(power, (int) (trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-                sleep(20);
-                break;
-            }
-
-            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
-            telemetry.addLine("OUPUT COMPLETED");
-            sleep(20);
-            break;
-
-            //case 1 (middle spike - 2)
-//           moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24)));
-//           sleep(20);
-//           moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
-//           sleep(20);
-            //       break;
-
-            // case 2 (right spike - 1)
-//
-//             moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22)));
-//             sleep(20);
-//             turn(power, -80);
-//             sleep(20);
-//             moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 30));
-//             sleep(20);
-
-            // case 3 (left spike - 3)
-//            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22));
-//            sleep(20);
-//            turn(power, -80);
-//            sleep(20);
-//            moveRight(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
-//            sleep(20);
-//            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            sleep(20);
-
-
-
-
-//
-//            trm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            brm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            tlm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            blm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//
-//            trm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            brm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            tlm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            blm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
-//            break;
-//
-//            // case 3 (left spike - 3)
-//            turn(power, 180);
-//            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
-//            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            break;
-
-
-
-
-
-
+            moveBackward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 22));
 
             //case 1 (middle spike - 2)
 //            telemetry.addData("object detected: ", checkTfod());
 //            telemetry.update();
-//            sleep(1000);
-            //if(checkTfod()){
+            //sleep(1000);
+
+//            if(checkTfod()){
 //                telemetry.addData("case 1: ", checkTfod());
 //                sleep(5000);
-                // place pixel
-//                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
+//                // place pixel
+//                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)); // orginally 45
 //                sleep(20);
 //                break;
-            //}
+//            }
 
             //case 2 (right spike - 1)
+            //  does this go 90 degrees ccw?!?!
+            // turn(power, -40.00);
+            moveBackward(power, (int) (-(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)));
+            sleep(20);
 
-//            turn(power, 40.00); // 90 degree turn
-//
-//
+            // this goes 90 degrees cw
+            // turn(power, 40.00);
+
+
 //            if(checkTfod()) {
 //                sleep(1000);
 //                // place pixel
 //                moveBackward(power, (int) (-(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)));
-//                // moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 10)));
 //                sleep(20);
 //                break;
 //            }
-//            //case 3 (left spike - 3)
-//
-//            turn(power, 80.00); // 180 degree turn
+
+            //case 3 (left spike - 3)
+//            turn(power, 80.00); // 180 degree turn?!?
 //
 //
 //            if(checkTfod()) {
@@ -261,44 +156,28 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 //                sleep(20);
 //                break;
 //            }
-//
-//            // error case (if nothing is scanned)
-//            // else
+
+            // error case (if nothing is scanned)
+            // else
 //            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
 //            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            // drop pixel in back area
+            // drop pixel in back area
 
-            //sleep(20);
+            sleep(20);
 
-            // break;
+            break;
         }
     }
-
 
     public void resetMotors() {
         trm.setPower(0);
         tlm.setPower(0);
         blm.setPower(0);
         brm.setPower(0);
-
-        imu.resetYaw();
-
-        trm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        brm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        tlm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        blm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        trm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        brm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        tlm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        blm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     public void moveForward(double power, int dist) {
-        telemetry.addData("TRM CURR POS (forward) ", trm.getCurrentPosition());
-        telemetry.update();
         while (trm.getCurrentPosition() <= dist) {
-            telemetry.addLine("INSIDE LOOP ");
             telemetry.addData("TRM CURR POS (forward) ", trm.getCurrentPosition());
 
             telemetry.update();
@@ -329,37 +208,28 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 
         if(deg >= 0){
             // while we want to rotate it cw (+ angle)
-            telemetry.addLine("DEGREE IS POSITIVE");
-            telemetry.update();
-            sleep(20);
-
-            while(deg >=  robotOrientation.getYaw(AngleUnit.DEGREES)) {
+            while(-deg <  robotOrientation.getYaw(AngleUnit.DEGREES)) {
                 robotOrientation = imu.getRobotYawPitchRollAngles();
                 telemetry.addData("CURRENT DEGREES: ", robotOrientation.getYaw(AngleUnit.DEGREES));
                 telemetry.update();
-                //sleep(20);
-
-                trm.setPower(power);
-                brm.setPower(power);
-                tlm.setPower(-power);
-                blm.setPower(-power);
                 sleep(20);
-            }
-        }else if(deg < 0){
-            // while we want to rotate it ccw (- angle)
-            telemetry.addLine("DEGREE IS NEGATIVE");
-            telemetry.update();
-            sleep(20);
 
-            while(deg <= robotOrientation.getYaw(AngleUnit.DEGREES)) {
-
-                robotOrientation = imu.getRobotYawPitchRollAngles();
-                telemetry.addData("CURRENT DEGREES: ", robotOrientation.getYaw(AngleUnit.DEGREES));
-                telemetry.update();
                 trm.setPower(-power);
                 brm.setPower(-power);
                 tlm.setPower(power);
                 blm.setPower(power);
+                sleep(200);
+            }
+        }else if(deg < 0){
+            // while we want to rotate it ccw (- angle)
+            while(deg >= robotOrientation.getYaw(AngleUnit.DEGREES)) {
+                robotOrientation = imu.getRobotYawPitchRollAngles();
+                telemetry.addData("CURRENT DEGREES: ", robotOrientation.getYaw(AngleUnit.DEGREES));
+                telemetry.update();
+                trm.setPower(power);
+                brm.setPower(power);
+                tlm.setPower(-power);
+                blm.setPower(-power);
                 sleep(20);
             }
         }
@@ -375,12 +245,8 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
         // orginially greater than or equal to
         // dist = 637.2203205144
         // initial trm position is 180
-
-        telemetry.addData("TRM CURR POS (backward) ", trm.getCurrentPosition());
-        telemetry.update();
-
         while (trm.getCurrentPosition() >= dist) {
-            telemetry.addLine("INSIDE LOOP ");
+            //telemetry.addLine("INSIDE LOOP ");
             telemetry.addData("TRM CURR POS (backward) ", trm.getCurrentPosition());
             telemetry.update();
             trm.setPower(-power);    // abs -> (+) => + power to trm
@@ -398,13 +264,8 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
     }
 
     public void moveLeft(double power, int dist) {
-        telemetry.addData("TRM CURR POS (left) ", trm.getCurrentPosition());
-        telemetry.update();
-
         while (trm.getCurrentPosition() <= dist) { //ref the - motor
-            telemetry.addLine("INSIDE LOOP ");
-            telemetry.addData("TRM CURR POS (left) ", brm.getCurrentPosition());
-            telemetry.update();
+            telemetry.addData("BRM CURR POS (left) ", brm.getCurrentPosition());
             trm.setPower(power);
             brm.setPower(-power);
             blm.setPower(power);
@@ -425,12 +286,8 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
     // problem child
     public void moveRight(double power, int dist) {
         // moves 28 inches when its supposed to move 12
-        telemetry.addData("TRM CURR POS (right) ", trm.getCurrentPosition());
-        telemetry.update();
         while (trm.getCurrentPosition() >= dist) { //ref the + motor
-            telemetry.addLine("INSIDE THE LOOP!");
             telemetry.addData("TRM CURR POS (right) ", trm.getCurrentPosition());
-            telemetry.update();
             trm.setPower(-power);
             brm.setPower(power);
             blm.setPower(-power);

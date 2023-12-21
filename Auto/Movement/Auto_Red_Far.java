@@ -21,8 +21,8 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import java.util.List;
 
 
-@Autonomous(name = "auto blue close") // closer to the backdrop
-public class Auto_Blue_Move_CV extends LinearOpMode {
+@Autonomous(name = "auto red far") // closer to the backdrop
+public class Auto_Red_Far extends LinearOpMode {
 
     // motors
     private DcMotor tlm, trm, blm, brm;
@@ -109,7 +109,7 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 12)));
+            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 16)));
             sleep(20);
 
             boolean detected = checkTfod();
@@ -121,12 +121,14 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 
             if(detected){
                 //case 1 (middle spike - 2)
-                moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
+                moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 5)));
+                sleep(20);
+                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 90));
                 sleep(20);
                 break;
             }
 
-            turn(power, -90 + OFFSET); // 80 degrees cuz gyro is off
+            turn(power, 90 - OFFSET); // 80 degrees cuz gyro is off
             sleep(20);
 
             detected = checkTfod();
@@ -138,12 +140,16 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 
             if(detected){
                 // case 2 (right spike - 1)
-                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
+
+                // this is to account for bumping into the riggings
+                moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 16)));
+                sleep(20);
+                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 84));
                 sleep(20);
                 break;
             }
 
-            turn(power, -180 + OFFSET); //  170 degrees cuz gyro is off
+            turn(power, -180 + (OFFSET * 2)); //  160 degrees cuz gyro is off (?)
             sleep(20);
 
             detected = checkTfod();
@@ -155,6 +161,9 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
 
             if(detected) {
                 // case 3 (left spike - 3)
+                // this is to account for bumping into the riggings
+                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 16));
+                sleep(20);
                 moveRight(power, (int) -(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
                 sleep(20);
                 moveForward(power, (int) (trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
@@ -162,8 +171,15 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
                 break;
             }
 
-            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
+            // this is to account for bumping into the riggings
+            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 18));
+            sleep(20);
+
+            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 84));
+            sleep(20);
+
             telemetry.addLine("OUPUT COMPLETED");
+            telemetry.update();
             sleep(20);
             break;
 
@@ -229,7 +245,7 @@ public class Auto_Blue_Move_CV extends LinearOpMode {
             //if(checkTfod()){
 //                telemetry.addData("case 1: ", checkTfod());
 //                sleep(5000);
-                // place pixel
+            // place pixel
 //                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
 //                sleep(20);
 //                break;
