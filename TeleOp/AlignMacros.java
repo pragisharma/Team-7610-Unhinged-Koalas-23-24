@@ -13,22 +13,17 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.util.ArrayList;
+
 @TeleOp(name = "Arm Auto Align")
 public class AlignMacros extends LinearOpMode {
     DcMotor fl, fr, bl, br;
 
-    AprilTagProcessor tagProcessor = new AprilTagProcessor.Builder()
-            .setDrawAxes(true)
-            .setDrawCubeProjection(true)
-            .setDrawTagID(true)
-            .setDrawTagOutline(true)
-            .build();
+    final double DISTANCE = 10;
 
-    VisionPortal visionPortal = new VisionPortal.Builder()
-            .addProcessor(tagProcessor)
-            .setCamera(hardwareMap.get(WebcamName.class, "Webcam1"))
-            .setCameraResolution(new Size(640, 480)) // works well w/o impacting performance
-            .build();
+    AprilTagProcessor tagProcessor;
+
+    VisionPortal visionPortal;
 
     @Override
     public void runOpMode() {
@@ -45,11 +40,24 @@ public class AlignMacros extends LinearOpMode {
         fr.setDirection(DcMotorSimple.Direction.REVERSE);
         br.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        tagProcessor = new AprilTagProcessor.Builder()
+                .setDrawAxes(true)
+                .setDrawCubeProjection(true)
+                .setDrawTagID(true)
+                .setDrawTagOutline(true)
+                .build();
+
+        visionPortal = new VisionPortal.Builder()
+                .addProcessor(tagProcessor)
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .setCameraResolution(new Size(640, 480)) // works well w/o impacting performance
+                .build();
+
         waitForStart();
         while (opModeIsActive()) {
-            if (gamepad1.dpad_left) {
+            if (gamepad2.dpad_left) {
                 alignHeading();
-            } else if (gamepad1.dpad_up) {
+            } else if (gamepad2.dpad_up) {
                 alignDistance();
             } else {
                 stopMotors();
@@ -68,6 +76,8 @@ public class AlignMacros extends LinearOpMode {
             telemetry.addData("Back Right power", br.getPower());
 
             telemetry.update();
+
+            sleep(20);
         }
     }
 
@@ -83,18 +93,74 @@ public class AlignMacros extends LinearOpMode {
         telemetry.addLine("ROTATING");
 
         double heading = 0;
-        if(tagProcessor.getDetections().size() > 0){
+        ArrayList<AprilTagDetection> detections =  tagProcessor.getDetections();
+        if(detections.size() >= 2){
+            //drive bearings to be equal
+            AprilTagDetection tag1 = detections.get(0);
+            AprilTagDetection tag2 = detections.get(1);
+
+            double d = Math.abs(tag1.id - tag2.id) * 6 * 2.54; //in cm
+            double da = tag1.ftcPose.range;
+            double db = tag2.ftcPose.range; //alternate
+
+            double theta = tag1.ftcPose.yaw - tag2.ftcPose.yaw;
+            theta = theta / 360 * 2 * Math.PI; //convert to radians???
+
+            telemetry.addData("Distance between tags", d);
+            telemetry.addData("Distance to tag 1", da);
+            telemetry.addData("Distance to tag 2", db);
+            telemetry.addData("Theta", theta);
+            telemetry.addData("Tag 1 id", tag1.id);
+            telemetry.addData("Tag 2 id", tag2.id);
+
+            heading = tag2.ftcPose.yaw - Math.acos(da * Math.sin(theta) / d); // TODO turn into taylor
+        } else if (detections.size() == 1) {
+            heading = detections.get(0).ftcPose.bearing; //point towards the tag and hope another one gets in the way
+
+            telemetry.addLine("can only see one tag");
+        } else {
+            telemetry.addLine("can't see apriltag");
+        }
+        telemetry.addData("Heading difference", heading);
+
+        double distance = 0;
+        if(detections.size() > 0){
             AprilTagDetection tag = tagProcessor.getDetections().get(0);
-            heading = tag.ftcPose.yaw;
+            distance = tag.ftcPose.y;
+            telemetry.addData("Distance", distance);
+        } else {
+            telemetry.addLine("can't see apriltag");
         }
 
+        double turnPower;
         //turn left if positive
-        double power = Range.clip(0.1 * heading, -0.5, 0.5);
+        turnPower = Range.clip(0.2 * heading, -0.2, 0.2);
 
-        fl.setPower(-power);
-        fr.setPower(power);
-        bl.setPower(-power);
-        br.setPower(power);
+        if (distance > DISTANCE) {
+            if (turnPower > 0) {
+                fl.setPower(turnPower);
+                fr.setPower(0);
+                bl.setPower(turnPower);
+                br.setPower(0);
+            } else {
+                fl.setPower(0);
+                fr.setPower(-turnPower);
+                bl.setPower(0);
+                br.setPower(-turnPower);
+            }
+        } else {
+            if (Math.abs(heading) < 0.7) {
+                fl.setPower(0);
+                fr.setPower(0);
+                bl.setPower(0);
+                br.setPower(0);
+            } else {
+                fl.setPower(turnPower);
+                fr.setPower(-turnPower);
+                bl.setPower(turnPower);
+                br.setPower(-turnPower);
+            }
+        }
     }
 
     public void alignDistance() {
@@ -104,13 +170,16 @@ public class AlignMacros extends LinearOpMode {
         if(tagProcessor.getDetections().size() > 0){
             AprilTagDetection tag = tagProcessor.getDetections().get(0);
             distance = tag.ftcPose.y;
+            telemetry.addData("Distance", distance);
+        } else {
+            telemetry.addLine("can't see apriltag");
         }
 
-        double power = Range.clip(0.1 * (distance - 6), -0.5, 0.5);
+        double drivePower = Range.clip(0.08 * (distance - DISTANCE), -0.3, 0.3);
 
-        fl.setPower(power);
-        fr.setPower(power);
-        bl.setPower(power);
-        br.setPower(power);
+        fl.setPower(drivePower);
+        fr.setPower(drivePower);
+        bl.setPower(drivePower);
+        br.setPower(drivePower);
     }
 }
