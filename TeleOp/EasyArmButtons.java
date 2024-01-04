@@ -20,22 +20,21 @@ public class EasyArmButtons extends LinearOpMode {
         LINE_RETRACT}
     ArmStates armState = STORAGE;
 
-    //TODO: WHY IS STORAGE ZERO
     double STORAGE_ALPHA_ANGLE; // set when OpMode is initialized
-    final int STORAGE_BETA_TICKS = 0;
+    int STORAGE_BETA_TICKS = 0;
 
-    final double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
-    final double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43; // the one you lift to for joint 2 to have clearance
-    final int PICKUP_BETA_TICKS = 1700;
+    double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
+    double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43; // the one you lift to for joint 2 to have clearance
+    int PICKUP_BETA_TICKS = 1700;
 
-    final double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 67;
-    final int FIRST_BETA_TICKS = 403;
+    double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 67;
+    int FIRST_BETA_TICKS = 403;
 
-    final double SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 68;
-    final int SECOND_BETA_TICKS = 574;
+    double SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 68;
+    int SECOND_BETA_TICKS = 574;
 
-    final double THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 95;
-    final int THIRD_BETA_TICKS = 1095;
+    double THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 95;
+    int THIRD_BETA_TICKS = 1095;
 
     //arm control constants
     //final double aP = 0.01; //unused
@@ -50,6 +49,13 @@ public class EasyArmButtons extends LinearOpMode {
 
         joint2 = hardwareMap.get(DcMotor.class, "joint 2");
         claw = hardwareMap.get(Servo.class, "claw");
+
+        //init all arm alphas since putting them in init would set STORAGE_ALPHA_ANGLE to 0 >:(
+        PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
+        PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43;
+        FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 67;
+        SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 68;
+        THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 95;
 
         //reset encoders to 0
         joint1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
