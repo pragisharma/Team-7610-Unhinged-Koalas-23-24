@@ -54,17 +54,17 @@ public class TeleOp2 extends LinearOpMode {
     double STORAGE_ALPHA_ANGLE; // set when OpMode is initialized
     int STORAGE_BETA_TICKS = 0;
 
-    double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
-    double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43; // the one you lift to for joint 2 to have clearance
+    double PICKUP_ALPHA_ANGLE;
+    double PICKUP_SECONDARY_ALPHA; // the one you lift to for joint 2 to have clearance
     int PICKUP_BETA_TICKS = 1700;
 
-    double FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 67;
+    double FIRST_ALPHA_ANGLE;
     int FIRST_BETA_TICKS = 403;
 
-    double SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 68;
+    double SECOND_ALPHA_ANGLE;
     int SECOND_BETA_TICKS = 574;
 
-    double THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 95;
+    double THIRD_ALPHA_ANGLE;
     int THIRD_BETA_TICKS = 1095;
 
     //arm control constants
@@ -104,8 +104,8 @@ public class TeleOp2 extends LinearOpMode {
         claw = hardwareMap.get(Servo.class, "claw");
 
         //init all arm alphas since putting them in init would set STORAGE_ALPHA_ANGLE to 0 >:(
-        PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
-        PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43;
+        PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 30.6;
+        PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 35;
         FIRST_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 67;
         SECOND_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 68;
         THIRD_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 95;
@@ -385,10 +385,8 @@ public class TeleOp2 extends LinearOpMode {
         if (aClose(alpha, target)) {
             return 0;
             //a little fudge since it would do the flop
-        } else if (target - alpha > 0) {
-            return -maxArmPower * Math.abs(target-alpha)/alpha;
         } else {
-            return maxArmPower * Math.abs(target-alpha)/alpha;
+            return -maxArmPower * (target-alpha)/alpha;
         }
     }
 
@@ -477,7 +475,7 @@ public class TeleOp2 extends LinearOpMode {
         private static final int TURN_RIGHT = 2;
         private static final int TURN_LEFT = 3;
         private static final int NONE = 4;
-        private final double JOYSTICK_SENSITIVITY = 0.1;
+        private final double JOYSTICK_SENSITIVITY = 0.0;
 
         private double drive;
         private double strafe;
@@ -546,29 +544,24 @@ public class TeleOp2 extends LinearOpMode {
 
         /**
          * This method calculates the power based on the variable driveState and clips it to
-         * the range of -0.6 to 0.6
+         * the range of -MAX_POWER to MAX_POWER
          * @return the motor power
          */
         public double getPower() {
             if (driveState == DRIVE) {
                 if (drive < 0) {
-                    return -Range.clip((Math.abs(drive)), -MAX_POWER, MAX_POWER);
-                    //return drive;
+                    return -Range.clip((Math.abs(scale(drive))), -MAX_POWER, MAX_POWER);
                 }
-                //return Range.clip((Math.abs(drive)), -0.7, 0.7);
                 return Range.clip(drive, -MAX_POWER, MAX_POWER);
             } else if (driveState == STRAFE) {
                 if (strafe < 0) {
-                    return -Range.clip((Math.abs(strafe)), -MAX_POWER, MAX_POWER);
+                    return -Range.clip((Math.abs(scale(strafe))), -MAX_POWER, MAX_POWER);
                 }
-                //return Range.clip((Math.abs(strafe)), -0.7, 0.7);
-                return Range.clip(strafe, -MAX_POWER, MAX_POWER);
+                return Range.clip(scale(strafe), -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_RIGHT) {
-                //return Range.clip((turnRight), -0.7, 0.7);
-                return Range.clip(turnRight, -MAX_POWER, MAX_POWER);
+                return Range.clip(0.5*scale(turnRight), -MAX_POWER, MAX_POWER);
             } else if (driveState == TURN_LEFT) {
-                //return Range.clip((turnLeft), -0.7, 0.7);
-                return Range.clip(turnLeft, -MAX_POWER, MAX_POWER);
+                return Range.clip(0.5*scale(turnLeft), -MAX_POWER, MAX_POWER);
             } else {
                 return 0;
             }
@@ -577,57 +570,11 @@ public class TeleOp2 extends LinearOpMode {
         /**
          * This method exponentially calculates power from the input given
          * Exponential drive code allows the driver to make more precise movements
-         * @param input the joystick input
+         * @param x the joystick input
          * @return the power that will be applied to the motors
          */
-        public double exponential(double input) {
-            // exponential 1
-          /*
-          // TODO write a method to calculate the following constant
-          double pow = input / 2.48; // this value is manually calculated to max out power at 0.6 when input is 0.8
-          for (double i = 0; i < input; i += 0.05) {
-              pow *= 1.04;
-          }
-          return pow;
-          */
-            // exponential 2
-          /*
-          double pow = input / 4.567923525;
-          for (double i = 0; i < input; i += 0.05) {
-              pow *= 1.08;
-          }
-          return pow;
-
-
-           // exponential 3
-
-
-           double pow = input / 2.13;
-           for (double i = 0; i < input; i += 0.05) {
-               pow *= 1.02; // change this value, 1.0265
-           }
-           return pow;
-
-
-           // exponential 4
-          /*
-          double pow = input / 1.82;
-          for (double i = 0; i < input; i += 0.05) {
-              pow *= 1.02;
-          }
-          return pow;
-          */
-
-            double s = 0.9;
-            input += 0.1;
-            double previousPower = input;
-            //telemetry.addData("power before", pow);
-            //telemetry.update();
-
-            pow = (s * previousPower + ((1 - s) * previousPower)) / 2;
-            telemetry.addData("power after", pow);
-            telemetry.update();
-            return pow;
+        public double scale(double x) {
+            return Math.signum(x) * x*x;
         }
     }
 }
