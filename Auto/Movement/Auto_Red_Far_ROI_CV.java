@@ -1,28 +1,26 @@
 package org.firstinspires.ftc.teamcode.Auto.Movement;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.tfod.TfodProcessor;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Auto.Vision.CustomObjectScanner;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
-import java.util.List;
 
-
-@Autonomous(name = "auto red far") // closer to the backdrop
-public class Auto_Red_Far extends LinearOpMode {
+@Autonomous(name = "NEW auto red far") // closer to the backdrop
+public class Auto_Red_Far_ROI_CV extends LinearOpMode {
 
     // motors
     private DcMotor tlm, trm, blm, brm;
@@ -39,18 +37,9 @@ public class Auto_Red_Far extends LinearOpMode {
     private static final int OFFSET = 10;
 
     // cv
+    OpenCvCamera cam;
 
-    private static final boolean USE_WEBCAM = true;
 
-    //CHANGE ALL THIS STUFF TO BLUE CONE WHEN WE TRAIN IT >>>>
-    private static final String TFOD_MODEL_ASSET = "redsphere.tflite";
-    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/redsphere.tflite";
-    private static final String[] LABELS = {
-            "red sphere",
-    };
-
-    private TfodProcessor tfod;
-    private VisionPortal visionPortal;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -98,40 +87,52 @@ public class Auto_Red_Far extends LinearOpMode {
         imu.initialize(myIMUparameters);
         imu.resetYaw();
 
-        initTfod();
+        // initTfod();
 
         // Wait for the DS start button to be touched.
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
 
+        int cameraMonitorViewId;
+        cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        cam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+
+        CustomObjectScanner scanner = new CustomObjectScanner();
+        cam.setPipeline(scanner);
+
+        cam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                cam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode) {
+
+            }
+        });
 
         waitForStart();
 
         while (opModeIsActive()) {
-            YawPitchRollAngles robotOrientation = imu.getRobotYawPitchRollAngles();
-            telemetry.addData("degrees", robotOrientation.getYaw(AngleUnit.DEGREES));
-            telemetry.update();
-            sleep(20);
-            
-            boolean detected = checkTfod();
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
 
-            sleep(50);
-            /*
             moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 16)));
             sleep(20);
 
-            boolean detected = checkTfod();
+            telemetry.addData("Object color: ", scanner.color());
+
+            if (scanner.color() == 1) {
+                telemetry.addLine("red");
+            } else {
+                telemetry.addLine("error");
+            }
+
+            telemetry.update();
             sleep(500);
 
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
+            if(scanner.color() == 1){
 
-            if(detected){
                 //case 1 (middle spike - 2)
                 moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 5)));
                 sleep(20);
@@ -143,14 +144,18 @@ public class Auto_Red_Far extends LinearOpMode {
             turn(power, 90 - OFFSET); // 80 degrees cuz gyro is off
             sleep(20);
 
-            detected = checkTfod();
+            telemetry.addData("Object color: ", scanner.color());
+
+            if (scanner.color() == 1) {
+                telemetry.addLine("red");
+            } else {
+                telemetry.addLine("error");
+            }
+
+            telemetry.update();
             sleep(500);
 
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            if(detected){
+            if(scanner.color() == 2){
                 // case 2 (right spike - 1)
 
                 // this is to account for bumping into the riggings
@@ -164,14 +169,18 @@ public class Auto_Red_Far extends LinearOpMode {
             turn(power, -180 + (OFFSET * 2)); //  160 degrees cuz gyro is off (?)
             sleep(20);
 
-            detected = checkTfod();
+            telemetry.addData("Object color: ", scanner.color());
+
+            if (scanner.color() == 1) {
+                telemetry.addLine("red");
+            } else {
+                telemetry.addLine("error");
+            }
+
+            telemetry.update();
             sleep(500);
 
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            if(detected) {
+            if(scanner.color() == 1) {
                 // case 3 (left spike - 3)
                 // this is to account for bumping into the riggings
                 moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 16));
@@ -195,112 +204,13 @@ public class Auto_Red_Far extends LinearOpMode {
             sleep(20);
             break;
 
-            //case 1 (middle spike - 2)
-//           moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24)));
-//           sleep(20);
-//           moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
-//           sleep(20);
-            //       break;
-
-            // case 2 (right spike - 1)
-//
-//             moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22)));
-//             sleep(20);
-//             turn(power, -80);
-//             sleep(20);
-//             moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 30));
-//             sleep(20);
-
-            // case 3 (left spike - 3)
-//            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 22));
-//            sleep(20);
-//            turn(power, -80);
-//            sleep(20);
-//            moveRight(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
-//            sleep(20);
-//            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            sleep(20);
 
 
 
-
-//
-//            trm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            brm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            tlm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            blm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//
-//            trm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            brm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            tlm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//            blm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
-//            break;
-//
-//            // case 3 (left spike - 3)
-//            turn(power, 180);
-//            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
-//            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            break;
-
-
-
-
-
-
-
-            //case 1 (middle spike - 2)
-//            telemetry.addData("object detected: ", checkTfod());
-//            telemetry.update();
-//            sleep(1000);
-            //if(checkTfod()){
-//                telemetry.addData("case 1: ", checkTfod());
-//                sleep(5000);
-            // place pixel
-//                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
-//                sleep(20);
-//                break;
-            //}
-
-            //case 2 (right spike - 1)
-
-//            turn(power, 40.00); // 90 degree turn
-//
-//
-//            if(checkTfod()) {
-//                sleep(1000);
-//                // place pixel
-//                moveBackward(power, (int) (-(trm.getCurrentPosition() + COUNTS_PER_INCH * 30)));
-//                // moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 10)));
-//                sleep(20);
-//                break;
-//            }
-//            //case 3 (left spike - 3)
-//
-//            turn(power, 80.00); // 180 degree turn
-//
-//
-//            if(checkTfod()) {
-//                sleep(1000);
-//                // place pixel
-//                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
-//                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//                sleep(20);
-//                break;
-//            }
-//
-//            // error case (if nothing is scanned)
-//            // else
-//            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
-//            moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
-//            // drop pixel in back area
-
-            //sleep(20);
-
-            // break;
-            */
         }
+
+        cam.stopStreaming();
+
     }
 
 
@@ -473,90 +383,5 @@ public class Auto_Red_Far extends LinearOpMode {
         resetMotors();
         sleep(20);
     }
-
-    private void initTfod() {
-
-        // Create the TensorFlow processor by using a builder.
-        tfod = new TfodProcessor.Builder()
-
-                // With the following lines commented out, the default TfodProcessor Builder
-                // will load the default model for the season. To define a custom model to load,
-                // choose one of the following:
-                //   Use setModelAssetName() if the custom TF Model is built in as an asset (AS only).
-                //   Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
-                .setModelAssetName(TFOD_MODEL_ASSET)
-                //.setModelFileName(TFOD_MODEL_FILE)
-
-                // The following default settings are available to un-comment and edit as needed to
-                // set parameters for custom models.
-                .setModelLabels(LABELS)
-                //.setIsModelTensorFlow2(true)
-                //.setIsModelQuantized(true)
-                //.setModelInputSize(300)
-                //.setModelAspectRatio(16.0 / 9.0)
-
-                .build();
-
-        // Create the vision portal by using a builder.
-        VisionPortal.Builder builder = new VisionPortal.Builder();
-
-        // Set the camera (webcam vs. built-in RC phone camera).
-        if (USE_WEBCAM) {
-            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-        } else {
-            builder.setCamera(BuiltinCameraDirection.BACK);
-        }
-
-        // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(640, 480));
-
-        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        //builder.enableLiveView(true);
-
-        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
-
-        // Choose whether or not LiveView stops if no processors are enabled.
-        // If set "true", monitor shows solid orange screen if no processors enabled.
-        // If set "false", monitor shows camera view without annotations.
-
-        // check
-//        builder.setAutoStopLiveView(false);
-
-        // Set and enable the processor.
-        builder.addProcessor(tfod);
-
-        // Build the Vision Portal, using the above settings.
-        visionPortal = builder.build();
-
-        // Set confidence threshold for TFOD recognitions, at any time.
-        //tfod.setMinResultConfidence(0.75f);
-
-        // Disable or re-enable the TFOD processor at any time.
-        //visionPortal.setProcessorEnabled(tfod, true);
-
-    }   // end method initTfod()
-
-    private boolean checkTfod() {
-
-        List<Recognition> currentRecognitions = tfod.getRecognitions();
-        telemetry.addData("# Objects Detected", currentRecognitions.size());
-
-        // Step through the list of recognitions and display info for each one.
-        for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
-
-            telemetry.addData(""," ");
-            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-            telemetry.addData("- Position", "%.0f / %.0f", x, y);
-            telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-        }   // end for() loop
-
-
-        return currentRecognitions.size() > 0;
-
-    }   // end method telemetryTfod()
-
 
 }

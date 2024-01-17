@@ -1,19 +1,19 @@
 package org.firstinspires.ftc.teamcode.Auto.Movement;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
@@ -21,8 +21,8 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import java.util.List;
 
 
-@Autonomous(name = "auto red far") // closer to the backdrop
-public class Auto_Red_Far extends LinearOpMode {
+@Autonomous(name = "blue close") // closer to the backdrop
+public class CloseBlue extends LinearOpMode {
 
     // motors
     private DcMotor tlm, trm, blm, brm;
@@ -43,10 +43,10 @@ public class Auto_Red_Far extends LinearOpMode {
     private static final boolean USE_WEBCAM = true;
 
     //CHANGE ALL THIS STUFF TO BLUE CONE WHEN WE TRAIN IT >>>>
-    private static final String TFOD_MODEL_ASSET = "redsphere.tflite";
-    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/redsphere.tflite";
+    private static final String TFOD_MODEL_ASSET = "bluesphere.tflite";
+    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/bluesphere.tflite";
     private static final String[] LABELS = {
-            "red sphere",
+            "blue sphere",
     };
 
     private TfodProcessor tfod;
@@ -109,19 +109,7 @@ public class Auto_Red_Far extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            YawPitchRollAngles robotOrientation = imu.getRobotYawPitchRollAngles();
-            telemetry.addData("degrees", robotOrientation.getYaw(AngleUnit.DEGREES));
-            telemetry.update();
-            sleep(20);
-            
-            boolean detected = checkTfod();
-            telemetry.addData("detected: ", detected);
-            telemetry.update();
-            sleep(20);
-
-            sleep(50);
-            /*
-            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 16)));
+            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 7)));
             sleep(20);
 
             boolean detected = checkTfod();
@@ -133,14 +121,12 @@ public class Auto_Red_Far extends LinearOpMode {
 
             if(detected){
                 //case 1 (middle spike - 2)
-                moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 5)));
-                sleep(20);
-                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 90));
+                moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
                 sleep(20);
                 break;
             }
 
-            turn(power, 90 - OFFSET); // 80 degrees cuz gyro is off
+            turn(power, -90 + OFFSET); // 80 degrees cuz gyro is off
             sleep(20);
 
             detected = checkTfod();
@@ -152,16 +138,12 @@ public class Auto_Red_Far extends LinearOpMode {
 
             if(detected){
                 // case 2 (right spike - 1)
-
-                // this is to account for bumping into the riggings
-                moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 16)));
-                sleep(20);
-                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 84));
+                moveForward(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
                 sleep(20);
                 break;
             }
 
-            turn(power, -180 + (OFFSET * 2)); //  160 degrees cuz gyro is off (?)
+            turn(power, -180 + OFFSET); //  170 degrees cuz gyro is off
             sleep(20);
 
             detected = checkTfod();
@@ -173,9 +155,6 @@ public class Auto_Red_Far extends LinearOpMode {
 
             if(detected) {
                 // case 3 (left spike - 3)
-                // this is to account for bumping into the riggings
-                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 16));
-                sleep(20);
                 moveRight(power, (int) -(trm.getCurrentPosition() + COUNTS_PER_INCH * 24));
                 sleep(20);
                 moveForward(power, (int) (trm.getCurrentPosition() + COUNTS_PER_INCH * 40));
@@ -183,15 +162,8 @@ public class Auto_Red_Far extends LinearOpMode {
                 break;
             }
 
-            // this is to account for bumping into the riggings
-            moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 18));
-            sleep(20);
-
-            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 84));
-            sleep(20);
-
+            moveBackward(power, (int)-(trm.getCurrentPosition() + COUNTS_PER_INCH * 35));
             telemetry.addLine("OUPUT COMPLETED");
-            telemetry.update();
             sleep(20);
             break;
 
@@ -257,7 +229,7 @@ public class Auto_Red_Far extends LinearOpMode {
             //if(checkTfod()){
 //                telemetry.addData("case 1: ", checkTfod());
 //                sleep(5000);
-            // place pixel
+                // place pixel
 //                moveLeft(power, (int)(trm.getCurrentPosition() + COUNTS_PER_INCH * 45));
 //                sleep(20);
 //                break;
@@ -299,7 +271,6 @@ public class Auto_Red_Far extends LinearOpMode {
             //sleep(20);
 
             // break;
-            */
         }
     }
 
