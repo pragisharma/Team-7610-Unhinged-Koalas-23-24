@@ -1,11 +1,16 @@
-package org.firstinspires.ftc.teamcode.Auto.Final;
+package org.firstinspires.ftc.teamcode.auto;
+
+import static org.firstinspires.ftc.teamcode.auto.FarBlue.ArmStates.*;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -51,6 +56,26 @@ public class FarBlue extends LinearOpMode {
 
     private TfodProcessor tfod;
     private VisionPortal visionPortal;
+
+    //arm stuff
+    DcMotor joint1, joint2;
+    AnalogInput pot;
+    Servo claw;
+
+    enum ArmStates {STORAGE, L1_DEPLOY_HIGH, L2_PICKUP, PICKUP, L1_RETRACT_HIGH, L2_STORAGE}
+    ArmStates armState = STORAGE;
+
+    double STORAGE_ALPHA_ANGLE; // Make sure to init this when you init the opmode
+    //STORAGE_ALPHA_ANGLE = (pot.getVoltage() * 270 / 3.3);
+    //^^init code
+    int STORAGE_BETA_TICKS = 0;
+
+    double PICKUP_ALPHA_ANGLE; //to be init later
+    double PICKUP_SECONDARY_ALPHA; // the one you lift to for joint 2 to have clearance
+    int PICKUP_BETA_TICKS = 1700;
+
+    final double bP = 0.005;
+    double maxArmPower = 1.0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -99,6 +124,13 @@ public class FarBlue extends LinearOpMode {
         imu.resetYaw();
 
         initTfod();
+
+        //more arm stuff
+        STORAGE_ALPHA_ANGLE = (pot.getVoltage() * 270 / 3.3);
+        double PICKUP_ALPHA_ANGLE = STORAGE_ALPHA_ANGLE + 38;
+        double PICKUP_SECONDARY_ALPHA = STORAGE_ALPHA_ANGLE + 43; // the one you lift to for joint 2 to have clearance
+        int PICKUP_BETA_TICKS = 1700;
+
 
         // Wait for the DS start button to be touched.
         telemetry.addData("DS preview on/off", "3 dots, Camera Stream");
@@ -432,4 +464,94 @@ public class FarBlue extends LinearOpMode {
     }   // end method checkTfod()
 
 
+    public void storageToPickup() {
+        double alpha = (pot.getVoltage() * 270 / 3.3);
+        double beta = joint2.getCurrentPosition();
+        while (!aClose(alpha, PICKUP_ALPHA_ANGLE) || !bClose(beta, PICKUP_BETA_TICKS)) {
+            alpha = (pot.getVoltage() * 270 / 3.3);
+            beta = joint2.getCurrentPosition();
+
+            if (armState == STORAGE) {
+                joint1.setPower(0);
+                joint2.setPower(0);
+
+                armState = L1_DEPLOY_HIGH;
+            } else if (armState == L1_DEPLOY_HIGH) {
+                joint1.setPower(setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA));
+                joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -1, 1));
+
+                if (aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
+                    armState = L2_PICKUP;
+                }
+            } else if (armState == L2_PICKUP) {
+                joint1.setPower(setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA));
+                joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -1,1));
+
+                if (!aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
+                    armState = L1_DEPLOY_HIGH;
+                } else if (bClose(beta, PICKUP_BETA_TICKS)) {
+                    armState = PICKUP;
+                }
+            } else if (armState == PICKUP) {
+                joint1.setPower(setJoint1Power(alpha, PICKUP_ALPHA_ANGLE));
+                joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -1,1));
+            }
+        }
+    }
+
+    public void pickupToStorage() {
+        double alpha = (pot.getVoltage() * 270 / 3.3);
+        double beta = joint2.getCurrentPosition();
+        while (!aClose(alpha, STORAGE_ALPHA_ANGLE) || !bClose(beta, STORAGE_ALPHA_ANGLE)) {
+            alpha = (pot.getVoltage() * 270 / 3.3);
+            beta = joint2.getCurrentPosition();
+
+            if (armState == PICKUP) {
+                joint1.setPower(0);
+                joint2.setPower(0);
+
+                armState = L1_RETRACT_HIGH;
+            } else if (armState == L1_RETRACT_HIGH) {
+                joint1.setPower(setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA));
+                joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -maxArmPower, maxArmPower));
+
+                if (aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
+                    armState = L2_STORAGE;
+                }
+            } else if (armState == L2_STORAGE) {
+                joint1.setPower(setJoint1Power(alpha, PICKUP_SECONDARY_ALPHA));
+                joint2.setPower(Range.clip(bP * (STORAGE_BETA_TICKS - beta), -maxArmPower, maxArmPower));
+
+                if (!aClose(alpha, PICKUP_SECONDARY_ALPHA)) {
+                    armState = L1_RETRACT_HIGH;
+                } else if (bClose(beta, STORAGE_BETA_TICKS)) {
+                    armState = STORAGE;
+                }
+            } else if (armState == STORAGE) {
+                joint1.setPower(setJoint1Power(alpha, STORAGE_ALPHA_ANGLE));
+                joint2.setPower(Range.clip(bP * (STORAGE_ALPHA_ANGLE - beta), -1,1));
+            }
+        }
+
+
+    }
+
+    public double setJoint1Power(double alpha, double target) {
+        if (aClose(alpha, target)) {
+            return 0;
+            //a little fudge since it would do the flop
+        } else if (target - alpha > 0) {
+            return -1 * Math.abs(target-alpha)/alpha;
+        } else {
+            return 1 * Math.abs(target-alpha)/alpha;
+        }
+    }
+
+    public boolean aClose(double actual, double target) {
+        return Math.abs(target - actual) <= 1;
+    }
+
+    public boolean bClose(double actual, double target) {
+        return Math.abs(target - actual) <= 10;
+    }
 }
