@@ -44,10 +44,11 @@ public class droneLauncher extends LinearOpMode {
                     telemetry.addData("servo position: ", servo.getPosition());
                     telemetry.update();
                     sleep(500);
-                    //  stage = 3;
+                    stage = 3;
                 }
                 if (stage == 3) {
                     servo.setPosition(0.75);
+                    motor.power(0);
                     break;
                 }
             }
