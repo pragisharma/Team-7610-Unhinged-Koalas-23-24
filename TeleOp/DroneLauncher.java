@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.TeleOp;
+package org.firstinspires.ftc.teamcode;
 
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 
 @TeleOp(name = "drone")
-public class DroneLauncher extends LinearOpMode {
+public class droneLauncher extends LinearOpMode {
     private DcMotor motor;
     private Servo servo;
 
@@ -31,22 +31,23 @@ public class DroneLauncher extends LinearOpMode {
                     stage = 1;
                 }
                 if (stage == 1) {
-                    if (timer >= 100) {
+                    if (timer >= 50) {
                         stage = 2;
                     }
                     timer++;
                     telemetry.addData("timer: ", timer);
                     telemetry.update();
+                    sleep(20);
                 }
                 if (stage == 2) {
+                    servo.setPosition(0.3); // 1 goes clockwise
                     telemetry.addData("servo position: ", servo.getPosition());
                     telemetry.update();
-                    servo.setPosition(1); // 1 goes clockwise
                     sleep(500);
-                    //stage = 3;
+                    //  stage = 3;
                 }
                 if (stage == 3) {
-                    servo.setPosition(0);
+                    servo.setPosition(0.75);
                     break;
                 }
             }
