@@ -1,4 +1,4 @@
-package org.firstinspires.ftc;
+package org.firstinspires.ftc.teamcode.Auto.Final;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -24,7 +24,7 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import java.util.List;
 
 
-@Autonomous(name = "blue close") // closer to the backdrop
+@Autonomous(name = "updated tested blue close") // closer to the backdrop
 public class TestedCloseBlue extends LinearOpMode {
 
     // motors
@@ -39,7 +39,7 @@ public class TestedCloseBlue extends LinearOpMode {
     // gyro
     IMU imu;
     IMU.Parameters myIMUparameters;
-    private static final int OFFSET = 10;
+    private static final int OFFSET = 15;
 
     // cv
 
@@ -106,7 +106,7 @@ public class TestedCloseBlue extends LinearOpMode {
         imu.initialize(myIMUparameters);
         imu.resetYaw();
 
-        // initTfod();
+        initTfod();
 
 
         // Wait for the DS start button to be touched.
@@ -124,43 +124,46 @@ public class TestedCloseBlue extends LinearOpMode {
             turn(power, -25);
             sleep(20);
 
-            // boolean detected = checkTfod();
-            sleep(500);
-//
-//            if(detected){
-//                // right spike
-//                // PLACE PIXEL
-//                sleep(20);
-//                turn(power, 0);
-//                sleep(20);
-//                endOutput();
-//                break;
-//            }
+            boolean detected = false;
 
-            turn(power, 0);
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
+            }
+
+            if(detected){
+                // right spike
+                // PLACE PIXEL
+
+                endOutput();
+                break;
+            }
+
+            turn(power, OFFSET);
             sleep(20);
-//
-//            detected = checkTfod();
-            sleep(500);
-//
-//            if(detected){
-//                // case 2 (right spike - 1)
-//                // PLACE PIXEL
-//                sleep(20);
-//                endOutput();
-//                break;
-//            }
+
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
+            }
+
+            if(detected){
+                // case 2 (right spike - 1)
+                // PLACE PIXEL
+                sleep(20);
+                endOutput();
+                break;
+            }
 
             turn(power, 25);
             sleep(20);
 
-//            detected = checkTfod();
-            sleep(500);
-
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
+            }
             // left spike
             // PLACE PIXEL
-            turn(power, 0);
-            sleep(20);
             endOutput();
             break;
 
@@ -169,7 +172,9 @@ public class TestedCloseBlue extends LinearOpMode {
 
 
     public void endOutput(){
-        moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 8)));
+        turn(power, -OFFSET);
+        sleep(20);
+        moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 34)));
         sleep(20);
         telemetry.addLine("OUPUT COMPLETED");
         telemetry.update();
@@ -401,7 +406,7 @@ public class TestedCloseBlue extends LinearOpMode {
         visionPortal = builder.build();
 
         // Set confidence threshold for TFOD recognitions, at any time.
-        //tfod.setMinResultConfidence(0.75f);
+        tfod.setMinResultConfidence(0.5f);
 
         // Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);

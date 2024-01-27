@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode.auto;
+package org.firstinspires.ftc.teamcode.Auto.Final;
 
-import static org.firstinspires.ftc.teamcode.auto.CloseBlue.ArmStates.*;
+import static org.firstinspires.ftc.teamcode.Auto.Final.CloseBlue.ArmStates.*;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -142,36 +142,48 @@ public class CloseBlue extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 15)));
+            moveBackward(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 7)));
             sleep(20);
 
             turn(power, -25);
             sleep(20);
 
-            boolean detected = checkTfod();
-            sleep(500);
+            boolean detected = false;
+
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
+            }
 
             if(detected){
-                //case 1 (left spike - 3)
-                // PLACE PIXEL
+                // right spike
+                storageToPickup();
                 sleep(20);
-                turn(power, 25);
+                // open claw
+                claw.setPosition(1);
+                sleep(500);
+                pickupToStorage();
                 sleep(20);
                 endOutput();
                 break;
             }
 
-            turn(power, -50);
+            turn(power, OFFSET);
             sleep(20);
 
-            detected = checkTfod();
-            sleep(500);
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
+            }
 
             if(detected){
                 // case 2 (right spike - 1)
-                // PLACE PIXEL
+                storageToPickup();
                 sleep(20);
-                turn(power, -25);
+                // open claw
+                claw.setPosition(1);
+                sleep(500);
+                pickupToStorage();
                 sleep(20);
                 endOutput();
                 break;
@@ -180,24 +192,29 @@ public class CloseBlue extends LinearOpMode {
             turn(power, 25);
             sleep(20);
 
-            detected = checkTfod();
-            sleep(500);
-
-            if(detected) {
-                // case 3 (middle spike - 2)
-                // PLACE PIXEL
-                endOutput();
-                break;
+            for(int i = 0; i < 3; i++){
+                detected = checkTfod();
+                sleep(1000);
             }
-
+            // left spike
+            storageToPickup();
+            sleep(20);
+            // open claw
+            claw.setPosition(1);
+            sleep(500);
+            pickupToStorage();
+            sleep(20);
             endOutput();
             break;
+
         }
     }
 
 
     public void endOutput(){
-        moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 48)));
+        turn(power, -OFFSET);
+        sleep(20);
+        moveRight(power, (int)(-(trm.getCurrentPosition() + COUNTS_PER_INCH * 34)));
         sleep(20);
         telemetry.addLine("OUPUT COMPLETED");
         telemetry.update();
@@ -493,6 +510,7 @@ public class CloseBlue extends LinearOpMode {
                 joint1.setPower(setJoint1Power(alpha, PICKUP_ALPHA_ANGLE));
                 joint2.setPower(Range.clip(bP * (PICKUP_BETA_TICKS - beta), -1,1));
             }
+            sleep(20);
         }
     }
 
